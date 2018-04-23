@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 from tkinter import *
 import requests
 import json
@@ -15,7 +16,7 @@ def red_green(amount):
 
 # Tkinter
 root = Tk()
-root.title("Crypto Currency Portfolio")
+
 
 
 # ************************* CREATE HEADER *************************
@@ -54,23 +55,27 @@ header_profit_loss_total.grid(row=0, column=9, sticky=N+S+E+W)
 # #####################################
 
 
-api_request = requests.get('https://api.coinmarketcap.com/v1/ticker/')
-api = json.loads(api_request.content)
 
 
 
 
-total_profit_loss = 0
+
+
 print("-----------------------")
 
 # Lookup function
 def lookup():
-	global total_profit_loss
+	total_profit_loss = 0
+	total_current_value = 0
+
+	api_request = requests.get('https://api.coinmarketcap.com/v1/ticker/')
+	api = json.loads(api_request.content)
+
 
 	my_portfolio = [
 		{
 		"sym": "BTC",
-		"amount_owned": 20,
+		"amount_owned": 70,
 		"price_paid_per": 8400,
 		},
 		{
@@ -85,13 +90,14 @@ def lookup():
 		},
 		{
 		"sym": "STEEM",
-		"amount_owned": 2000,
+		"amount_owned": 2900,
 		"price_paid_per": 5.00,
 		},
 	]
 
 	row_count = 1
-
+	pie = []
+	pie_size = []
 	for x in api:
 		for coin in my_portfolio:
 			if coin["sym"] == x["symbol"]:
@@ -99,18 +105,19 @@ def lookup():
 				total_paid = float(coin["amount_owned"]) * float(coin["price_paid_per"])
 				current_value = float(coin["amount_owned"]) * float(x["price_usd"])
 				profit_loss = current_value - total_paid
-
+				total_current_value += current_value 
 				total_profit_loss += profit_loss
 				profit_loss_per_coin = float(x["price_usd"]) - float(coin["price_paid_per"])
-
-				print(x["name"])
-				print("Current Price: ${0:.2f}".format(float(x["price_usd"])))
-				print("Profit/Lodd per coin: ${0:.2f}".format(profit_loss_per_coin))
-				print("Rank: {0}".format(x["rank"]))
-				print("Total Paid: {0}". format(total_paid))
-				print("Current Value: {0:.2f}".format(current_value))
-				print("Profit/Loss: {0:.2f}".format(profit_loss))
-				print("-----------------------")
+				pie.append(x["name"])
+				pie_size.append(coin["amount_owned"])
+				# print(x["name"])
+				# print("Current Price: ${0:.2f}".format(float(x["price_usd"])))
+				# print("Profit/Lodd per coin: ${0:.2f}".format(profit_loss_per_coin))
+				# print("Rank: {0}".format(x["rank"]))
+				# print("Total Paid: {0}". format(total_paid))
+				# print("Current Value: {0:.2f}".format(current_value))
+				# print("Profit/Loss: {0:.2f}".format(profit_loss))
+				# print("-----------------------")
 
 				name = Label(root, text=x["name"], bg="white")
 				name.grid(row=row_count, column=0, sticky=N+S+E+W)
@@ -144,8 +151,27 @@ def lookup():
 
 				row_count += 1
 
+	root.title("Crypto Currency Portfolio - Portfolio Value: {0:.2f}".format(total_current_value))
 
-	print("Total Profit/Loss: {0:.2f}".format(total_profit_loss))
+	portfolio_profit_loss = Label(root, text="Total P/L: ${0:.2f}".format(total_profit_loss), fg=red_green(total_profit_loss))
+	portfolio_profit_loss.grid(row=row_count, column=0, sticky=N+S+E+W, padx=10, pady=10)
+
+	api = ""
+	update_button = Button(root, text="Update prices", command=lookup)
+	update_button.grid(row=row_count, column=9, sticky=E+S, padx=10, pady=10)
+
+	def graph(pie, pie_sizes):
+		labels = pie
+		sizes = pie_size
+		colors = ['yellowgreen', 'gold', 'lightskyblue', 'lightcoral']
+		patches, texts = plt.pie(sizes, colors=colors, shadow=True, startangle=90)
+		plt.legend(patches, labels, loc="best")
+		plt.axis('equal')
+		plt.tight_layout()
+		plt.show()
+
+	graph_button = Button(root, text="Pie Chart", command= lambda: graph(pie, pie_size))
+	graph_button.grid(row=row_count, column=8, sticky=E+S, padx=10, pady=10)
 lookup()
 root.mainloop()
 
